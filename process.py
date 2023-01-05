@@ -1,7 +1,6 @@
 import json 
 import requests
 from bs4 import BeautifulSoup
-from PyPDF2 import PdfReader, PdfFileWriter
 
 def load_json(filename):
     return json.load(open(filename, "r"))
@@ -77,29 +76,40 @@ def crawl_from_list_url():
     with open("./data/add_data_1.json", "w", encoding="utf-8") as f:
         json.dump(data, f)
 
-
-def pdf2txt():
-
-    file_path = './100_sample.pdf'
-    pdf = PdfReader(file_path)
-    print(pdf.pages[1])
-    with open('./100_sample.txt', 'w') as f:
-        for page_num in range(len(pdf.pages)):
-            # print('Page: {0}'.format(page_num))
-            pageObj = pdf.pages[page_num]
-
-            try: 
-                txt = pageObj.extractText()
-                print(''.center(100, '-'))
-            except:
-                pass
-            else:
-                f.write('Page {0}\n'.format(page_num+1))
-                f.write(''.center(100, '-'))
-                f.write(txt)
-        f.close()
+def process_data(data):
+  new_data = []
+  for para in data:
+    para = [txt.strip() for txt in para]
+    para = " . ".join(para)
+    para = para.replace(",", " , ")
+    while "  " in para:
+      para = para.replace("  ", " ")
+    while ". ." in para:
+      para = para.replace(". .", ".")
+    new_data.append(para)
+  return new_data
 
 if __name__ == "__main__":
     # run_crawl()
     # crawl_from_list_url()
-    pdf2txt()
+    df1_root = json.load(open("./data/add_data.json", "r"))
+    df2_root = json.load(open("./data/add_data_2.json", "r"))
+    df3_root = json.load(open("./data/full_data.json", "r"))
+    df1 = [" ".join(i["paragraphs"]) for i in df1_root]
+    df1 = [[j.strip() + " ." for j in i.replace(".", " .").split(".") if len(j.strip())] for i in df1]
+    print("df1:", len(df1))
+    df2 = [" ".join(i["paragraphs"]) for i in df2_root]
+    df2 = [[j.strip() + " ." for j in i.replace(".", " .").split(".") if len(j.strip())] for i in df2]
+    print("df2:", len(df2))
+    df3_tmp = list(df3_root.values())
+    df3 = []
+    for row in df3_tmp:
+        df3 += row
+    df3 = [" ".join(i["paragraphs"]) for i in df3]
+    df3 = [[j.strip() + " ." for j in i.replace(".", " .").split(".") if len(j.strip())] for i in df3]
+    print("df3:", len(df3))
+    df = df1 + df2 + df3
+    print("df:", len(df))
+    data = process_data(df)
+    with open("./data/dataset.json", "w", encoding="utf-8") as f:
+        json.dump(data, f)
