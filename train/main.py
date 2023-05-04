@@ -9,7 +9,7 @@ def config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', default='EleutherAI/gpt-neo-1.3B')
     parser.add_argument('--epochs', default=10)
-    parser.add_argument('--batch_size', default=8)
+    parser.add_argument('--batch_size', default=4)
     parser.add_argument('--learning_rate', default=5e-5)
     parser.add_argument('--warmup_steps', default=2000)
     parser.add_argument('--weight_decay', default=0.05)
@@ -18,7 +18,7 @@ def config():
     parser.add_argument('--checkpoint_path', default='./checkpoint')
     parser.add_argument('--init_data', default=True)
 
-    args = parser()
+    args = parser.parse_args()
     return args
 
 def main():
@@ -34,7 +34,7 @@ def main():
         prepare_data(args.json_path, args.block_size, tokenizer, outdir=f"./train_raw_{args.block_size}.txt")
 
     # model = model.to(device)
-    model = DistributedDataParallel(model)
+    # model = DistributedDataParallel(model)
 
     # EPOCHS = 10
     # BATCH_SIZE = 16
@@ -46,9 +46,10 @@ def main():
 
     train_dataset = TextDataset(
         tokenizer=tokenizer,
-        file_path=args.train_config,
+        file_path=args.json_path,
         block_size=args.block_size
     )
+    model, train_dataset = accelerator.prepare(model, train_dataset)
 
     training_args = TrainingArguments(
         output_dir=args.checkpoint_path,
@@ -56,8 +57,8 @@ def main():
         save_total_limit=1,
         num_train_epochs=args.epochs,
 
-        save_strategy="step",
-        logging_strategy="step",
+        save_strategy="steps",
+        logging_strategy="steps",
         per_device_train_batch_size=args.batch_size,
 
         learning_rate=args.learning_rate,
@@ -72,7 +73,6 @@ def main():
 
     collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
-    model, train_dataset = accelerator.prepare(model, train_dataset)
 
     trainer = Trainer(
         model=model,
