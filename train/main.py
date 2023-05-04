@@ -24,8 +24,6 @@ def config():
 def main():
     args = config()
 
-
-
     accelerator = Accelerator()
     # device = accelerator.device("cuda:0" if torch.cuda.is_available() else "cpu")
     device = accelerator.device
