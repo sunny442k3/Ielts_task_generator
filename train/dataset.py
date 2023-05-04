@@ -57,8 +57,17 @@ class IeltsDataset(Dataset):
 
 
     def __getitem__(self, idx):
-        txt = self.data[idx]
-        inputs = self.tokenizer(txt, max_length=self.max_length, padding="max_length", truncation=True, return_tensors="pt")
-        inputs["labels"] = inputs["input_ids"]
-        return inputs
+        # txt = self.data[idx]
+        # inputs = self.tokenizer(txt, max_length=self.max_length, padding="max_length", truncation=True, return_tensors="pt")
+        # inputs["labels"] = inputs["input_ids"]
+        # return inputs
+        return self.data[idx]
+
+
+def prepare_data(data_path, max_length, tokenizer, outdir="./train_raw.txt"):
+    data = IeltsDataset(data_path, tokenizer, max_length)
+    new_data = [data[idx] for idx in range(len(data))]
+    with open(outdir, "w") as f:
+        f.write("\n".join(new_data))
+        f.close()
     
